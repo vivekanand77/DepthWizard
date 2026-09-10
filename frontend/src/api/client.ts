@@ -41,6 +41,17 @@ export const authApi = {
   },
 };
 
+export const healthApi = {
+  checkBackend: async (): Promise<boolean> => {
+    try {
+      const res = await api.get('/');
+      return res.status === 200;
+    } catch {
+      return false;
+    }
+  },
+};
+
 export const pipelineApi = {
   upload: async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
