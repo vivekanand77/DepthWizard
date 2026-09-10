@@ -1,7 +1,9 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     APP_NAME: str = "Depthwizard Backend"
     DEBUG: bool = True
     
@@ -17,10 +19,6 @@ class Settings(BaseSettings):
     # File Storage
     UPLOAD_DIR: str = "uploads"
     OUTPUT_DIR: str = "outputs"
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
 settings = Settings()
 

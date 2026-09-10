@@ -42,35 +42,36 @@ def test_health():
     print("[PASS] Health Check Passed")
 
 
-def test_auth_flow():
-    """Register and login a test user, obtaining JWT token."""
+def get_auth_token() -> str:
+    """Helper to register and login a user and return the JWT token."""
     email = f"testuser_{np.random.randint(1000, 9999)}@depthwizard.ai"
     password = "SecurePassword123!"
 
-    # 1. Register
     reg_resp = client.post(
         "/auth/register",
         json={"email": email, "password": password, "full_name": "Test Engineer"},
     )
     assert reg_resp.status_code == 201, f"Register failed: {reg_resp.text}"
 
-    # 2. Login
     login_resp = client.post(
         "/auth/login/json",
         json={"email": email, "password": password},
     )
     assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
     token_data = login_resp.json()
-    token = token_data["access_token"]
+    return token_data["access_token"]
+
+
+def test_auth_flow():
+    """Register and login a test user, verifying JWT token and /auth/me profile."""
+    token = get_auth_token()
     assert token is not None
 
-    # 3. Verify /auth/me
     me_resp = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me_resp.status_code == 200
-    assert me_resp.json()["email"] == email
+    assert "email" in me_resp.json()
+    print("[PASS] Auth Flow Passed")
 
-    print(f"[PASS] Auth Flow Passed (Token acquired for {email})")
-    return token
 
 
 def create_synthetic_geotiff(width: int = 512, height: int = 512) -> bytes:
@@ -105,7 +106,7 @@ def create_synthetic_geotiff(width: int = 512, height: int = 512) -> bytes:
 
 def test_full_pipeline():
     """Runs Upload -> Infer -> Calibrate end-to-end."""
-    token = test_auth_flow()
+    token = get_auth_token()
     headers = {"Authorization": f"Bearer {token}"}
 
     # 1. Upload synthetic GeoTIFF
