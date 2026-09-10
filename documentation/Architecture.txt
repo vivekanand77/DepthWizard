@@ -1,0 +1,158 @@
+Here is the complete **System Architecture Blueprint** for **DepthWizard (SIH26175)**. 
+
+This architecture is designed for a **high-throughput, modular hackathon stack** that allows a 6-person team to work in parallel without blocking one another.
+
+---
+
+### **System Architecture Diagram**
+
+```
++-----------------------------------------------------------------------------------+
+|                                 CLIENT (FRONTEND)                                 |
+|                      Next.js 14 (App Router) + TypeScript                         |
+|  +--------------------+  +-------------------------+  +------------------------+  |
+|  | GeoTIFF Drag/Drop  |  | 2D Split View (RGB/DSM) |  | Three.js / WebGL 3D    |  |
+|  | Metadata Inspector |  | Elevation Cross-Section |  | Terrain Canvas + Spline|  |
+|  +---------+----------+  +------------+------------+  +-----------+------------+  |
++------------|--------------------------|---------------------------|---------------+
+             | (REST / Multipart)       | (Fetch JSON/GeoTIFF)      | (3D Vertices)
+             v                          v                           v
++-----------------------------------------------------------------------------------+
+|                                 API LAYER (BACKEND)                               |
+|                                FastAPI (Python 3.11+)                             |
+|  +--------------------+  +-------------------------+  +------------------------+  |
+|  | /api/v1/upload     |  | /api/v1/calibrate       |  | /api/v1/export         |  |
+|  | /api/v1/infer      |  | /api/v1/measure         |  | /api/v1/health         |  |
+|  +---------+----------+  +------------+------------+  +-----------+------------+  |
++------------|--------------------------|---------------------------|---------------+
+             |                          |                           |
+             v                          v                           v
++-----------------------------------------------------------------------------------+
+|                              ENGINE LAYER (CORE ML/GIS)                           |
+|  +-----------------------------------------------------------------------------+  |
+|  | 1. Geospatial Ingestion Service (`rasterio`, `pyproj`, `GDAL`)                |  |
+|  |    - Validates CRS/UTM, extracts Affine Transform, generates tile offsets   |  |
+|  +-----------------------------------------------------------------------------+  |
+|  | 2. Monocular Depth Inference Engine (`PyTorch`, `Depth Anything V2`)         |  |
+|  |    - Vision Transformer (ViT) Backbone -> Disparity Map Array [0.0 - 1.0]   |  |
+|  +-----------------------------------------------------------------------------+  |
+|  | 3. Scale & Shift Calibration Engine (`numba`, `scipy`, `scikit-learn`)       |  |
+|  |    - Cloth Simulation Filter (CSF Ground Mask) + RANSAC (s * D_rel + t)      |  |
+|  +-----------------------------------------------------------------------------+  |
+|  | 4. 3D Mesh Generation & Decimation Engine (`NumPy`, `OpenCV`)               |  |
+|  |    - Quadtree vertex simplification & GeoTIFF export with CRS metadata     |  |
+|  +-----------------------------------------------------------------------------+  |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+### **1. Backend Directory Structure (`FastAPI`)**
+
+To maintain clean separation of concerns, structure your FastAPI backend into modular packages:
+
+```text
+depthwizard-backend/
+├── app/
+│   ├── main.py                   # FastAPI initialization & Middleware (CORS)
+│   ├── config.py                 # Environment variables & hardware/GPU paths
+│   ├── api/
+│   │   └── v1/
+│   │       ├── router.py         # Primary API Router aggregation
+│   │       ├── endpoints/
+│   │       │   ├── upload.py     # Upload & validate GeoTIFF
+│   │       │   ├── infer.py      # Relative MDE inference trigger
+│   │       │   ├── calibrate.py  # CSF + RANSAC DEM scale calibration
+│   │       │   └── export.py     # Download GeoTIFF / OBJ / GLTF
+│   ├── services/
+│   │   ├── gis_service.py        # Rasterio, PyProj, Affine matrix logic
+│   │   ├── depth_service.py      # PyTorch model load & inference wrapper
+│   │   ├── csf_service.py        # Bare-earth ground point filtering
+│   │   └── calibration_service.py# RANSAC linear fitting against GDEM
+│   ├── schemas/
+│   │   ├── request.py            # Pydantic validation schemas
+│   │   └── response.py           # Pydantic response payloads
+│   └── utils/
+│       ├── file_manager.py       # Temporary scratch & storage management
+│       └── metrics.py            # RMSE, MAE, LE90 error statistics
+├── requirements.txt
+└── Dockerfile
+```
+
+---
+
+### **2. Component-by-Component Specifications**
+
+#### **A. Frontend Stack (Member 5 & Member 6)**
+* **Framework:** Next.js 14 (App Router) + TypeScript + Tailwind CSS.
+* **3D Visualization:** `Three.js` + `@react-three/fiber` / `@react-three/drei`.
+* **Key Components:**
+  1. **Upload & Metadata Panel:** Displays Ground Sampling Distance (GSD), image resolution, and Coordinate Reference System (CRS/UTM Zone) upon file load.
+  2. **Split View Comparison Canvas:** Side-by-side sync of raw optical RGB image, AI relative disparity map, and final calibrated Digital Surface Model (DSM).
+  3. **Interactive 3D Terrain View:** Renders an orthorectified texture draped over an elevation-displaced plane geometry. Includes cubic Hermite spline camera interpolation for smooth automated flythroughs.
+  4. **Elevation Cross-Section Tool:** Click two points on the 2D canvas to draw a line; renders a dynamic line chart (using `Chart.js` / `Recharts`) showing the terrain height profile in physical metres.
+
+#### **B. Backend & REST API Layer (Member 4)**
+* **Framework:** FastAPI (Uvicorn ASGI server).
+* **Core API Endpoints:**
+  * `POST /api/v1/upload`: Validates file format (GeoTIFF vs PNG/JPG). Extracts spatial bounding box, CRS code (EPSG), and resolution.
+  * `POST /api/v1/infer`: Runs the PyTorch model to produce a relative disparity matrix (`.npy` file stored in scratch storage).
+  * `POST /api/v1/calibrate`: Executes Cloth Simulation Filtering (CSF) and RANSAC scale-shift fitting against reference DEMs.
+  * `GET /api/v1/export/geotiff`: Generates and streams a downloadable, fully georeferenced metric DSM GeoTIFF.
+
+#### **C. Geospatial Ingestion & Tile Engine (Member 3)**
+* **Core Libraries:** `rasterio`, `pyproj`, `GDAL`, `NumPy`.
+* **Functionality:**
+  * Reads GeoTIFF affine transform matrices.
+  * Handles sub-tile cropping when sending large satellite images to PyTorch tensors (e.g. \\(512 \times 512\\) patches), automatically updating offset affine transform matrices to preserve spatial alignment upon re-stitching.
+
+#### **D. Machine Learning Inference Engine (Member 1)**
+* **Framework:** PyTorch + `timm` + CUDA.
+* **Model Backbone:** `Depth Anything V2` Vision Transformer (ViT).
+* **Optimization:** Pre-load weights on server startup. To handle edge-blur at urban structural boundaries, apply adaptive bin classification-regression heads with a Dirichlet Covariance loss formulation.
+
+#### **E. Absolute Scale Calibration Engine (Member 2)**
+* **Core Libraries:** `numba`, `scipy`, `scikit-learn`.
+* **Pipeline Execution:**
+  1. Project co-registered global DEM (e.g., SRTM / COP-DEM) coordinates into camera space.
+  2. Run the adapted **Cloth Simulation Filter (CSF)** over the predicted relative point cloud to mask out non-ground structures (buildings, trees).
+  3. Execute **RANSAC linear regression** on ground-support points to recover scale (\\(s\\)) and translation shift (\\(t\\)) parameters:
+     \\[d_{\text{metric}} = s \cdot D_{\text{rel}} + t\\]
+
+---
+
+### **3. Inter-Service Data Contract (API Schema Example)**
+
+To allow the frontend and backend developers to build simultaneously, agree on this exact JSON contract for the main calibration response:
+
+```json
+{
+  "status": "success",
+  "job_id": "dw_task_98421",
+  "geospatial_metadata": {
+    "crs": "EPSG:32643",
+    "bounds": [700000.0, 3099000.0, 700640.0, 3100000.0],
+    "resolution_m": [2.5, -2.5],
+    "is_georeferenced": true
+  },
+  "calibration_parameters": {
+    "scale_factor_s": 42.18,
+    "shift_translation_t": 112.50,
+    "ransac_inlier_ratio": 0.942
+  },
+  "validation_metrics": {
+    "rmse_metres": 1.42,
+    "mae_metres": 0.98,
+    "le90_metres": 2.34
+  },
+  "assets": {
+    "dsm_geotiff_url": "/api/v1/export/dw_task_98421_dsm.tif",
+    "mesh_json_url": "/api/v1/export/dw_task_98421_mesh.json",
+    "thumbnail_url": "/api/v1/export/dw_task_98421_preview.png"
+  }
+}
+```
+
+---
+
+💡 **Next Step:** Since your backend and geospatial pipelines depend on `rasterio` and `PyTorch`, would you like me to generate the **`Docker-Compose` setup and `requirements.txt` file** so your team can set up identical development environments across all laptops?
