@@ -1,7 +1,7 @@
 import React from 'react';
-import { UploadCloud, Cpu, Sliders, Box } from 'lucide-react';
+import { UploadCloud, Cpu, Sliders, Box, Mountain } from 'lucide-react';
 
-export type PipelineStepId = 'upload' | 'infer' | 'calibrate' | 'analytics';
+export type PipelineStepId = 'upload' | 'infer' | 'calibrate' | 'analytics' | 'terrain';
 
 interface PipelineStepperProps {
   currentStep: PipelineStepId;
@@ -49,6 +49,14 @@ export const PipelineStepper: React.FC<PipelineStepperProps> = ({
       description: 'Interactive mesh, contours & earthwork',
       icon: Box,
       available: hasCalibration || hasInference,
+      completed: false,
+    },
+    {
+      id: 'terrain' as PipelineStepId,
+      label: '5. 3D Terrain',
+      description: 'Cinematic terrain flythrough',
+      icon: Mountain,
+      available: hasCalibration,
       completed: false,
     },
   ];
