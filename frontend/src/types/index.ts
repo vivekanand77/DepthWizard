@@ -27,6 +27,19 @@ export interface GeospatialMetadata {
   band_count: number;
   is_georeferenced: boolean;
   gsd_metres: number | null;
+
+  // Compatibility aliases used by the existing UI components.
+  dimensions: {
+    width: number;
+    height: number;
+    channels: number;
+  };
+  tiles_info: {
+    tile_count: number;
+    grid_size: [number, number];
+    tile_size: number;
+    overlap: number;
+  };
 }
 
 export interface TileInfo {
@@ -67,6 +80,19 @@ export interface InferenceResponse {
   tile_results: TileInferResult[];
   disparity_map_path: string;
   message: string;
+
+  // Compatibility aliases used by the current frontend components.
+  status: string;
+  model_used: string;
+  depth_map_path: string;
+  shape: [number, number];
+  relative_depth_range: [number, number];
+}
+
+export interface GCPPoint {
+  x: number;
+  y: number;
+  true_z: number;
 }
 
 // Calibration types — match backend app/schemas/calibrate.py
@@ -77,6 +103,13 @@ export interface CalibrationMetrics {
   inlier_count: number;
   inlier_ratio: number;
   ground_point_count: number;
+
+  // Compatibility aliases used by the current frontend components.
+  rmse_z: number;
+  mae_z: number;
+  le90: number;
+  asprs_vertical_accuracy_class: string;
+  samples_count: number;
 }
 
 export interface GroundControlPoint {
@@ -95,6 +128,13 @@ export interface CalibrationResponse {
   dsm_geotiff_path: string | null;
   calibration_ms: number;
   message: string;
+
+  // Compatibility aliases used by the current frontend components.
+  status: string;
+  scale: number;
+  bias: number;
+  ground_ratio: number;
+  metric_dsm_path: string;
 }
 
 // Export types — match backend app/schemas/export.py

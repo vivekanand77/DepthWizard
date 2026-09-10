@@ -7,6 +7,7 @@ import { UploadStep } from './components/UploadStep';
 import { InferenceStep } from './components/InferenceStep';
 import { CalibrationStep } from './components/CalibrationStep';
 import { AnalyticsPanel } from './components/AnalyticsPanel';
+import { TerrainFlythrough } from './components/TerrainFlythrough';
 import type { UploadResponse, InferenceResponse, CalibrationResponse } from './types';
 import './index.css';
 
@@ -107,6 +108,13 @@ export function App() {
               <AnalyticsPanel
                 jobId={activeJobId}
                 onBack={() => setCurrentStep('calibrate')}
+              />
+            )}
+
+            {currentStep === 'terrain' && activeJobId && (
+              <TerrainFlythrough
+                jobId={activeJobId}
+                onBack={() => setCurrentStep('analytics')}
               />
             )}
           </div>
