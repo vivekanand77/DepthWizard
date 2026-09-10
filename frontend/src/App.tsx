@@ -15,6 +15,7 @@ export function App() {
   const [token, setToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Pipeline state
   const [currentStep, setCurrentStep] = useState<PipelineStepId>('upload');
@@ -25,11 +26,22 @@ export function App() {
   useEffect(() => {
     const savedToken = localStorage.getItem('depthwizard_token');
     const savedUser = localStorage.getItem('depthwizard_user');
+    const savedTheme = localStorage.getItem('depthwizard_theme');
+
     if (savedToken) {
       setToken(savedToken);
       setUserEmail(savedUser || 'User');
     }
+
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+    }
   }, []);
+
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+    localStorage.setItem('depthwizard_theme', theme);
+  }, [theme]);
 
   const handleLogout = () => {
     localStorage.removeItem('depthwizard_token');
@@ -45,11 +57,25 @@ export function App() {
 
   const activeJobId = uploadData?.job_id || null;
 
+  const resetToUpload = () => {
+    setUploadData(null);
+    setInferData(null);
+    setCalibData(null);
+    setCurrentStep('upload');
+  };
+
   return (
     <div className="app-layout">
       <Navbar
         token={token}
         username={userEmail}
+        theme={theme}
+        onToggleTheme={() => setTheme((prev) => {
+          if (prev === 'light') {
+            return 'dark';
+          }
+          return 'light';
+        })}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
       />
@@ -87,7 +113,7 @@ export function App() {
                 }}
                 existingData={inferData}
                 onNext={() => setCurrentStep('calibrate')}
-                onBack={() => setCurrentStep('upload')}
+                onBack={resetToUpload}
               />
             )}
 

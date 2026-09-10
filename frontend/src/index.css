@@ -20,6 +20,24 @@
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+body[data-theme='light'] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e2e8f0;
+  --bg-card: #ffffff;
+  --border-color: #cbd5e1;
+  --border-focus: #0284c7;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #0284c7;
+  --accent-light: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.08);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -89,6 +107,10 @@ body {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
+}
+
+body[data-theme='dark'] .brand-title {
+  color: #f8fafc;
 }
 
 .brand-subtitle {
@@ -959,7 +981,7 @@ input[type="range"] {
   flex: 1;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #2f9e44 0%, #d4a63c 38%, #e76f51 66%, #7a2f16 100%);
+  background: linear-gradient(90deg, #7a2f16 0%, #e76f51 38%, #d4a63c 66%, #2f9e44 100%);
   border: 1px solid rgba(255,255,255,0.08);
 }
 
