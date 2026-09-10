@@ -1,7 +1,9 @@
+// Auth types — match backend app/schemas/user.py
 export interface User {
-  id: string;
+  id: number;
   email: string;
   is_active: boolean;
+  created_at: string;
 }
 
 export interface AuthResponse {
@@ -9,6 +11,12 @@ export interface AuthResponse {
   token_type: string;
 }
 
+export interface UserLogin {
+  email: string;
+  password: string;
+}
+
+// Upload types — match backend app/schemas/upload.py
 export interface GeospatialMetadata {
   crs_epsg: number | null;
   crs_wkt: string | null;
@@ -53,6 +61,7 @@ export interface UploadResponse {
   message: string;
 }
 
+// Inference types — match backend app/schemas/infer.py
 export interface TileInferResult {
   tile_index: [number, number];
   disparity_path: string;
@@ -64,15 +73,13 @@ export interface TileInferResult {
 
 export interface InferenceResponse {
   job_id: string;
-
-  // Backend payload fields.
-  model_variant?: string;
-  device?: string;
-  tiles_processed?: number;
-  total_ms?: number;
-  tile_results?: TileInferResult[];
-  disparity_map_path?: string;
-  message?: string;
+  model_variant: string;
+  device: string;
+  tiles_processed: number;
+  total_ms: number;
+  tile_results: TileInferResult[];
+  disparity_map_path: string;
+  message: string;
 
   // Compatibility aliases used by the current frontend components.
   status: string;
@@ -88,14 +95,14 @@ export interface GCPPoint {
   true_z: number;
 }
 
+// Calibration types — match backend app/schemas/calibrate.py
 export interface CalibrationMetrics {
-  // Backend payload fields.
-  rmse_metres?: number;
-  mae_metres?: number;
-  le90_metres?: number;
-  inlier_count?: number;
-  inlier_ratio?: number;
-  ground_point_count?: number;
+  rmse_metres: number;
+  mae_metres: number;
+  le90_metres: number;
+  inlier_count: number;
+  inlier_ratio: number;
+  ground_point_count: number;
 
   // Compatibility aliases used by the current frontend components.
   rmse_z: number;
@@ -105,17 +112,22 @@ export interface CalibrationMetrics {
   samples_count: number;
 }
 
+export interface GroundControlPoint {
+  pixel_col: number;
+  pixel_row: number;
+  elevation_m: number;
+  source: string;
+}
+
 export interface CalibrationResponse {
   job_id: string;
-
-  // Backend payload fields.
-  scale_factor_s?: number;
-  shift_translation_t?: number;
+  scale_factor_s: number;
+  shift_translation_t: number;
   metrics: CalibrationMetrics;
-  dsm_npy_path?: string;
-  dsm_geotiff_path?: string | null;
-  calibration_ms?: number;
-  message?: string;
+  dsm_npy_path: string;
+  dsm_geotiff_path: string | null;
+  calibration_ms: number;
+  message: string;
 
   // Compatibility aliases used by the current frontend components.
   status: string;
@@ -125,21 +137,7 @@ export interface CalibrationResponse {
   metric_dsm_path: string;
 }
 
-export interface VolumeResponse {
-  job_id: string;
-  base_elevation_m: number;
-  cut_volume_m3: number;
-  fill_volume_m3: number;
-  net_volume_m3: number;
-  surface_area_m2: number;
-  true_surface_area_m2: number;
-  min_elevation_m: number;
-  max_elevation_m: number;
-  mean_elevation_m: number;
-  computation_ms: number;
-  message: string;
-}
-
+// Export types — match backend app/schemas/export.py
 export interface MeshExportResponse {
   job_id: string;
   format: string;
@@ -160,5 +158,20 @@ export interface ContourExportResponse {
   max_elevation_m: number;
   geojson: Record<string, any>;
   generation_ms: number;
+  message: string;
+}
+
+export interface VolumeResponse {
+  job_id: string;
+  base_elevation_m: number;
+  cut_volume_m3: number;
+  fill_volume_m3: number;
+  net_volume_m3: number;
+  surface_area_m2: number;
+  true_surface_area_m2: number;
+  min_elevation_m: number;
+  max_elevation_m: number;
+  mean_elevation_m: number;
+  computation_ms: number;
   message: string;
 }
