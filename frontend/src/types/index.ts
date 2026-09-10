@@ -9,17 +9,24 @@ export interface AuthResponse {
   token_type: string;
 }
 
-export interface RasterMetadata {
+export interface GeospatialMetadata {
   crs_epsg: number | null;
   crs_wkt: string | null;
   bounds: [number, number, number, number] | null;
   resolution: [number, number] | null;
+  width: number;
+  height: number;
+  band_count: number;
+  is_georeferenced: boolean;
+  gsd_metres: number | null;
+
+  // Compatibility aliases used by the existing UI components.
   dimensions: {
     width: number;
     height: number;
     channels: number;
   };
-  tiles_info?: {
+  tiles_info: {
     tile_count: number;
     grid_size: [number, number];
     tile_size: number;
@@ -27,15 +34,47 @@ export interface RasterMetadata {
   };
 }
 
+export interface TileInfo {
+  tile_index: [number, number];
+  pixel_offset: [number, number];
+  tile_width: number;
+  tile_height: number;
+  affine_transform: number[];
+  saved_path: string;
+}
+
 export interface UploadResponse {
   job_id: string;
   filename: string;
   file_type: string;
-  metadata: RasterMetadata;
+  metadata: GeospatialMetadata;
+  tiles: TileInfo[];
+  tile_count: number;
+  message: string;
+}
+
+export interface TileInferResult {
+  tile_index: [number, number];
+  disparity_path: string;
+  min_disparity: number;
+  max_disparity: number;
+  mean_disparity: number;
+  inference_ms: number;
 }
 
 export interface InferenceResponse {
   job_id: string;
+
+  // Backend payload fields.
+  model_variant?: string;
+  device?: string;
+  tiles_processed?: number;
+  total_ms?: number;
+  tile_results?: TileInferResult[];
+  disparity_map_path?: string;
+  message?: string;
+
+  // Compatibility aliases used by the current frontend components.
   status: string;
   model_used: string;
   depth_map_path: string;
@@ -50,6 +89,15 @@ export interface GCPPoint {
 }
 
 export interface CalibrationMetrics {
+  // Backend payload fields.
+  rmse_metres?: number;
+  mae_metres?: number;
+  le90_metres?: number;
+  inlier_count?: number;
+  inlier_ratio?: number;
+  ground_point_count?: number;
+
+  // Compatibility aliases used by the current frontend components.
   rmse_z: number;
   mae_z: number;
   le90: number;
@@ -59,10 +107,20 @@ export interface CalibrationMetrics {
 
 export interface CalibrationResponse {
   job_id: string;
+
+  // Backend payload fields.
+  scale_factor_s?: number;
+  shift_translation_t?: number;
+  metrics: CalibrationMetrics;
+  dsm_npy_path?: string;
+  dsm_geotiff_path?: string | null;
+  calibration_ms?: number;
+  message?: string;
+
+  // Compatibility aliases used by the current frontend components.
   status: string;
   scale: number;
   bias: number;
-  metrics: CalibrationMetrics;
   ground_ratio: number;
   metric_dsm_path: string;
 }
