@@ -623,9 +623,9 @@ export const TerrainFlythrough: React.FC<TerrainFlythroughProps> = ({ jobId, onB
             <span>Low</span>
           </div>
           <div className="terrain-legend-values">
-            <span>{formatMetricValue(terrainMetrics?.min_elevation_m)}</span>
-            <span className="legend-arrow">↓</span>
             <span>{formatMetricValue(terrainMetrics?.max_elevation_m)}</span>
+            <span className="legend-arrow">↓</span>
+            <span>{formatMetricValue(terrainMetrics?.min_elevation_m)}</span>
           </div>
         </div>
       </div>
